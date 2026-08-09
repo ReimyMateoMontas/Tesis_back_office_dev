@@ -1,0 +1,88 @@
+# ============================================================
+#  .gitignore para proyecto .NET / ASP.NET Core (Visual Studio)
+#  Colócalo en la RAÍZ del repositorio: source\repos\Api_Eden\
+# ============================================================
+
+# --- Resultados de compilación ---
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Rr]elease/
+[Dd]ebugPublic/
+x64/
+x86/
+build/
+bld/
+[Bb]uilds/
+
+# --- Carpetas de Visual Studio (bloqueadas mientras VS está abierto) ---
+.vs/
+.vscode/
+
+# --- Archivos de usuario / configuración local ---
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# --- Rider / JetBrains ---
+.idea/
+*.sln.iml
+
+# --- NuGet ---
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+.nuget/
+
+# --- Archivos de compilación de MSBuild ---
+*.pidb
+*.svclog
+*.scc
+*.dll
+*.exe
+*.pdb
+*.cache
+*.tmp
+
+# --- ASP.NET Core ---
+wwwroot/dist/
+node_modules/
+
+# --- Secretos y configuración sensible (recomendado) ---
+# Descomenta estas líneas si NO quieres subir tus claves/contraseñas.
+# Ver la nota de seguridad que te di sobre appsettings.json.
+# appsettings.Development.json
+# appsettings.Production.json
+# secrets.json
+
+# --- Logs y bases de datos locales ---
+*.log
+*.mdf
+*.ldf
+*.sqlite
+*.db
+
+# --- Sistema operativo ---
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.stackdump
+.DS_Store
+
+# --- Backups y temporales ---
+*.bak
+*.swp
+*~
+*.orig
+bin/
+obj/
+.vs/

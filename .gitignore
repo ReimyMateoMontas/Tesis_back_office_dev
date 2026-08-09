@@ -1,0 +1,79 @@
+﻿# ============================================================
+# .gitignore para proyecto .NET / ASP.NET Core (Visual Studio)
+# Ubicacion: raiz del repositorio Api_Eden
+# ============================================================
+
+# Resultados de compilacion
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Rr]elease/
+[Dd]ebugPublic/
+x64/
+x86/
+build/
+bld/
+[Bb]uilds/
+artifacts/
+
+# Visual Studio / VS Code / Rider
+.vs/
+.vscode/
+.idea/
+*.sln.iml
+
+# Archivos de usuario y configuracion local
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+project.lock.json
+project.fragment.lock.json
+.nuget/
+
+# MSBuild y archivos generados
+*.pidb
+*.svclog
+*.scc
+*.cache
+*.tmp
+
+# ASP.NET Core / frontend
+wwwroot/dist/
+node_modules/
+
+# Secretos y configuracion sensible
+# Descomenta si esos archivos tienen claves, contrasenas o datos locales.
+# appsettings.Development.json
+# appsettings.Production.json
+# secrets.json
+
+# Logs y bases de datos locales
+*.log
+*.mdf
+*.ldf
+*.sqlite
+*.db
+
+# Sistema operativo
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.stackdump
+.DS_Store
+
+# Backups y temporales
+*.bak
+*.swp
+*~
+*.orig
