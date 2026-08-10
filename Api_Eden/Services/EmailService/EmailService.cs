@@ -34,7 +34,7 @@ namespace Api_Eden.Services.EmailService
                 Console.WriteLine($"Link: {urlActivacion}");
                 Console.WriteLine($"========================================\n");
 
-                return true; 
+                return !IsProduction();
             }
 
             // ── Producción: envío real con SendGrid ───────────────────────────
@@ -102,7 +102,23 @@ namespace Api_Eden.Services.EmailService
 
                 var msg = MailHelper.CreateSingleEmail(from, to, subject, "", html);
                 var response = await client.SendEmailAsync(msg);
-                return (int)response.StatusCode >= 200 && (int)response.StatusCode < 300;
+                var responseBody = await response.Body.ReadAsStringAsync();
+                var enviado = (int)response.StatusCode >= 200 && (int)response.StatusCode < 300;
+
+                if (enviado)
+                {
+                    _logger.LogInformation(
+                        "SendGrid activación enviada a {Email}. StatusCode: {StatusCode}",
+                        destinatario, response.StatusCode);
+                }
+                else
+                {
+                    _logger.LogError(
+                        "SendGrid activación falló para {Email}. StatusCode: {StatusCode}. Body: {Body}",
+                        destinatario, response.StatusCode, responseBody);
+                }
+
+                return enviado;
             }
             catch (Exception ex)
             {
@@ -126,7 +142,7 @@ namespace Api_Eden.Services.EmailService
                 Console.WriteLine($"Para: {destinatario}");
                 Console.WriteLine($"Link: {urlReset}");
                 Console.WriteLine($"========================================\n");
-                return true;
+                return !IsProduction();
             }
 
             // ── Producción: SendGrid ──────────────────────────────────────────
@@ -189,7 +205,23 @@ namespace Api_Eden.Services.EmailService
 
                 var msg = MailHelper.CreateSingleEmail(from, to, subject, "", html);
                 var response = await client.SendEmailAsync(msg);
-                return (int)response.StatusCode >= 200 && (int)response.StatusCode < 300;
+                var responseBody = await response.Body.ReadAsStringAsync();
+                var enviado = (int)response.StatusCode >= 200 && (int)response.StatusCode < 300;
+
+                if (enviado)
+                {
+                    _logger.LogInformation(
+                        "SendGrid recuperación enviada a {Email}. StatusCode: {StatusCode}",
+                        destinatario, response.StatusCode);
+                }
+                else
+                {
+                    _logger.LogError(
+                        "SendGrid recuperación falló para {Email}. StatusCode: {StatusCode}. Body: {Body}",
+                        destinatario, response.StatusCode, responseBody);
+                }
+
+                return enviado;
             }
             catch (Exception ex)
             {
@@ -203,12 +235,20 @@ namespace Api_Eden.Services.EmailService
             var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY")
                 ?? _config["SendGrid:ApiKey"];
 
-            if (apiKey is "SENDGRID_API_KEY" or "TU_API_KEY_DE_SENDGRID")
+            if (apiKey is "SENDGRID_API_KEY" or "TU_API_KEY_DE_SENDGRID" or "TU_SENDGRID_API_KEY")
             {
                 return null;
             }
 
             return apiKey;
+        }
+
+        private bool IsProduction()
+        {
+            return string.Equals(
+                Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                "Production",
+                StringComparison.OrdinalIgnoreCase);
         }
 
     }
