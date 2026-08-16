@@ -266,7 +266,7 @@ namespace Api_Eden.Services.TratamientoService
             return (true, "Historial registrado correctamente.", historial.Id);
         }
 
-        // ── Tratamientos (lista global para Gestión Médica) ───────────────────
+
         public async Task<IEnumerable<object>> GetTratamientosAsync()
         {
             return await _db.Tratamientos

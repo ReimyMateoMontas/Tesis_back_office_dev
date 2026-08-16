@@ -41,10 +41,10 @@ builder.Services.AddCors(options =>
         {
             if (string.IsNullOrWhiteSpace(origin)) return false;
 
-            // 1) Orígenes configurados explícitamente (appsettings / variable en Railway)
+
             if (allowedOrigins.Contains(origin)) return true;
 
-            // 2) Desarrollo local y cualquier despliegue de Vercel
+            
             var host = new Uri(origin).Host;
             return host == "localhost"
                 || host == "127.0.0.1"
@@ -56,7 +56,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 2. Controladores
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -159,7 +159,7 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-// 6. Middleware Pipeline  
+
 app.UseSwagger();
 app.UseSwaggerUI();
 // app.UseHttpsRedirection();
