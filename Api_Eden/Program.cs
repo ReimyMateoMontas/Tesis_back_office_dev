@@ -37,10 +37,22 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+
+            // 1) Orígenes configurados explícitamente (appsettings / variable en Railway)
+            if (allowedOrigins.Contains(origin)) return true;
+
+            // 2) Desarrollo local y cualquier despliegue de Vercel
+            var host = new Uri(origin).Host;
+            return host == "localhost"
+                || host == "127.0.0.1"
+                || host.EndsWith(".vercel.app");
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
@@ -109,8 +121,8 @@ builder.Services.AddScoped<IVacunaService, VacunaService>();
 builder.Services.AddScoped<ZoneService>();
 builder.Services.AddScoped<IAdopcionService, AdopcionService>();
 builder.Services.AddScoped<IGastoService, GastoService>();
-builder.Services.AddScoped<IDashboardService,DashboardService>();
-builder.Services.AddScoped<IDonacionService,DonacionService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IDonacionService, DonacionService>();
 builder.Services.AddScoped<IObjetivoService, ObjetivoService>();
 builder.Services.AddScoped<IMedicoService, MedicoService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -151,7 +163,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 // app.UseHttpsRedirection();
-app.UseCors("AllowFrontend");       
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
