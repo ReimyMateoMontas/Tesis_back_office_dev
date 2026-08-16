@@ -1,10 +1,9 @@
 ﻿using Api_Eden.Data;
 using Api_Eden.DTOs.AdopcionDto;
+using Api_Eden.Models;
 using Api_Eden.Services.AdopcionesService.Interface;
 using Microsoft.EntityFrameworkCore;
-using MySqlConnector;
 using Microsoft.Extensions.Logging;
-using System.Data;
 
 namespace Api_Eden.Services.AdopcionesService
 {
@@ -102,36 +101,30 @@ namespace Api_Eden.Services.AdopcionesService
             if (animal.EstadoGeneral != "Activo")
                 return (false, $"El animal no está disponible. Estado actual: {animal.EstadoGeneral}.");
 
-            var connection = _db.Database.GetDbConnection();
-            await connection.OpenAsync();
-
-            using var command = connection.CreateCommand();
-            command.CommandType = System.Data.CommandType.StoredProcedure;
-            command.CommandText = "SP_RegistrarAdopcion";
-
-            command.Parameters.Add(new MySqlParameter("p_AnimalId", dto.AnimalId));
-            command.Parameters.Add(new MySqlParameter("p_NombreAdoptante", dto.NombreAdoptante));
-            command.Parameters.Add(new MySqlParameter("p_TelefonoAdoptante", (object?)dto.TelefonoAdoptante ?? DBNull.Value));
-            command.Parameters.Add(new MySqlParameter("p_EmailAdoptante", (object?)dto.EmailAdoptante ?? DBNull.Value));
-            command.Parameters.Add(new MySqlParameter("p_DireccionAdoptante", (object?)dto.DireccionAdoptante ?? DBNull.Value));
-            command.Parameters.Add(new MySqlParameter("p_DocumentoIdentidad", (object?)dto.DocumentoIdentidad ?? DBNull.Value));
-            command.Parameters.Add(new MySqlParameter("p_FechaAdopcion", dto.FechaAdopcion.ToString("yyyy-MM-dd")));
-            command.Parameters.Add(new MySqlParameter("p_UsuarioId", dto.UsuarioResponsableId));
-
-            var pResultado = new MySqlParameter("p_Resultado", MySqlDbType.VarChar)
+            // Inserción directa con Entity Framework Core.
+            // Antes se usaba el procedimiento almacenado SP_RegistrarAdopcion, que fallaba
+            // en producción (MySQL sobre Linux, sensible a mayúsculas) porque referenciaba
+            // la tabla "Adopciones" y en el servidor se llama "adopciones".
+            // La adopción se crea en estado "Pendiente"; el animal se marca como "Adoptado"
+            // solo cuando la adopción se aprueba (ver ActualizarEstado).
+            var adopcion = new Adopcione
             {
-                Direction = System.Data.ParameterDirection.Output,
-                Size = 100
+                AnimalId = dto.AnimalId,
+                NombreAdoptante = dto.NombreAdoptante,
+                TelefonoAdoptante = dto.TelefonoAdoptante,
+                EmailAdoptante = dto.EmailAdoptante,
+                DireccionAdoptante = dto.DireccionAdoptante,
+                DocumentoIdentidad = dto.DocumentoIdentidad,
+                FechaAdopcion = dto.FechaAdopcion,
+                EstadoAdopcion = "Pendiente",
+                UsuarioResponsableId = dto.UsuarioResponsableId,
+                FechaCreacion = DateTime.Now
             };
-            command.Parameters.Add(pResultado);
 
-            await command.ExecuteNonQueryAsync();
+            _db.Adopciones.Add(adopcion);
+            await _db.SaveChangesAsync();
 
-            var resultado = pResultado.Value?.ToString();
-            if (resultado != null && resultado.StartsWith("ERROR"))
-                return (false, resultado);
-
-            return (true, resultado ?? "Adopción registrada correctamente.");
+            return (true, "Adopción registrada correctamente.");
         }
 
         public async Task<(bool ok, string mensaje)> ActualizarEstado(int id, ActualizarEstadoAdopcionDto dto)

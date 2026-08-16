@@ -1,8 +1,8 @@
 ﻿using Api_Eden.Data;
 using Api_Eden.DTOs.GastosDto;
+using Api_Eden.Models;
 using Api_Eden.Services.GastosService.Interface;
 using Microsoft.EntityFrameworkCore;
-using MySqlConnector;
 
 namespace Api_Eden.Services.GastosService
 {
@@ -101,38 +101,32 @@ namespace Api_Eden.Services.GastosService
                     return (false, "El alimento especificado no existe.");
             }
 
-            // Llamar SP usando conexión directa para manejar parámetro OUT
-            var connection = _db.Database.GetDbConnection();
-            await connection.OpenAsync();
-
-            using var command = connection.CreateCommand();
-            command.CommandType = System.Data.CommandType.StoredProcedure;
-            command.CommandText = "SP_RegistrarGasto";
-
-            command.Parameters.Add(new MySqlParameter("p_CategoriaGastoId", dto.CategoriaGastoId));
-            command.Parameters.Add(new MySqlParameter("p_Concepto", dto.Concepto));
-            command.Parameters.Add(new MySqlParameter("p_Monto", dto.Monto));
-            command.Parameters.Add(new MySqlParameter("p_FechaGasto", dto.FechaGasto.ToString("yyyy-MM-dd")));
-            command.Parameters.Add(new MySqlParameter("p_FormaPago", dto.FormaPago));
-            command.Parameters.Add(new MySqlParameter("p_NumeroFactura", (object?)dto.NumeroFactura ?? DBNull.Value));
-            command.Parameters.Add(new MySqlParameter("p_NombreProveedor", (object?)dto.NombreProveedor ?? DBNull.Value));
-            command.Parameters.Add(new MySqlParameter("p_AlimentoId", (object?)dto.AlimentoId ?? DBNull.Value));
-            command.Parameters.Add(new MySqlParameter("p_UsuarioId", dto.UsuarioRegistroId));
-
-            var pResultado = new MySqlParameter("p_Resultado", MySqlDbType.VarChar)
+            // Inserción directa con Entity Framework Core.
+            // Antes se usaba el procedimiento almacenado SP_RegistrarGasto, pero en
+            // producción (MySQL sobre Linux, sensible a mayúsculas) fallaba porque el
+            // SP referenciaba la tabla "Gastos" y en el servidor se llama "gastos".
+            var gasto = new Gasto
             {
-                Direction = System.Data.ParameterDirection.Output,
-                Size = 100
+                CategoriaGastoId = dto.CategoriaGastoId,
+                Concepto = dto.Concepto,
+                Monto = dto.Monto,
+                FechaGasto = dto.FechaGasto,
+                FormaPago = dto.FormaPago,
+                NumeroFactura = dto.NumeroFactura,
+                NumeroTransaccion = dto.NumeroTransaccion,
+                NombreProveedor = dto.NombreProveedor,
+                TelefonoProveedor = dto.TelefonoProveedor,
+                AlimentoId = dto.AlimentoId,
+                MedicamentoId = dto.MedicamentoId,
+                Observaciones = dto.Observaciones,
+                UsuarioRegistroId = dto.UsuarioRegistroId,
+                FechaCreacion = DateTime.Now
             };
-            command.Parameters.Add(pResultado);
 
-            await command.ExecuteNonQueryAsync();
+            _db.Gastos.Add(gasto);
+            await _db.SaveChangesAsync();
 
-            var resultado = pResultado.Value?.ToString();
-            if (resultado != null && resultado.StartsWith("ERROR"))
-                return (false, resultado);
-
-            return (true, resultado ?? "Gasto registrado correctamente.");
+            return (true, "Gasto registrado correctamente.");
         }
 
         public async Task<(bool ok, string mensaje)> ActualizarGasto(int id, ActualizarGastoDto dto)
