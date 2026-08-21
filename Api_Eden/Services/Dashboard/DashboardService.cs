@@ -46,7 +46,11 @@ namespace Api_Eden.Services.DashboardService
                 await _db.Animales.CountAsync(a => a.FechaIngreso >= hace7dias),
                 await _db.Adopciones.CountAsync(a => a.EstadoAdopcion == "Pendiente"),
                 await _db.Tratamientos.CountAsync(t => t.Estado == "Activo"),
-                await _db.Alimentos.CountAsync(a => a.Activo == true && a.CantidadDisponible <= a.StockMinimo)
+                await _db.Alimentos.CountAsync(a => a.Activo == true && a.CantidadDisponible <= a.StockMinimo),
+                await _db.Vacunas.CountAsync(v =>
+                    (v.Estado == null || v.Estado == "Pendiente")
+                    && v.ProximaDosis.HasValue
+                    && v.ProximaDosis <= DateOnly.FromDateTime(DateTime.Today))
             );
         }
 

@@ -1103,6 +1103,11 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.ProximaDosis).HasColumnName("proxima_dosis");
             entity.Property(e => e.TipoVacunaId).HasColumnName("tipo_vacuna_id");
             entity.Property(e => e.VeterinarioId).HasColumnName("veterinario_id");
+            entity.Property(e => e.Estado)
+                .HasDefaultValueSql("'Pendiente'")
+                .HasColumnType("enum('Pendiente','Completada')")
+                .HasColumnName("estado");
+            entity.Property(e => e.AlertaEnviada).HasColumnName("alerta_enviada");
 
             entity.HasOne(d => d.Animal).WithMany(p => p.Vacunas)
                 .HasForeignKey(d => d.AnimalId)

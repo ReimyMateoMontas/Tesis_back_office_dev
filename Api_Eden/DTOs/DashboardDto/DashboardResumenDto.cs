@@ -10,7 +10,8 @@
         int IngresadosSemana,
         int AdopcionesPendientes,
         int TratamientosActivos,
-        int AlertasStock
+        int AlertasStock,
+        int VacunasPendientes
     );
 
     public record EstadoSaludDto(string Estado, int Cantidad);

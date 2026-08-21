@@ -127,6 +127,9 @@ builder.Services.AddScoped<IObjetivoService, ObjetivoService>();
 builder.Services.AddScoped<IMedicoService, MedicoService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
+// Job en segundo plano: alertas de vacunas por correo
+builder.Services.AddHostedService<Api_Eden.Services.VacunaAlertaService.VacunaAlertaBackgroundService>();
+
 // 4. Base de Datos MySQL
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(

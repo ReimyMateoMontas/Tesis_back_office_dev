@@ -21,6 +21,13 @@ public partial class Vacuna
 
     public string? Observaciones { get; set; }
 
+    // Estado del ciclo de la vacuna: 'Pendiente' (próxima dosis por aplicar)
+    // o 'Completada' (el usuario la marcó como finalizada / no requiere más dosis).
+    public string? Estado { get; set; }
+
+    // Fecha en la que se envió la última alerta por correo (evita reenvíos el mismo día).
+    public DateOnly? AlertaEnviada { get; set; }
+
     public DateTime? FechaCreacion { get; set; }
 
     public virtual Animale Animal { get; set; } = null!;

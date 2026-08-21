@@ -49,6 +49,31 @@ namespace Api_Eden.Controllers
             return Ok(new { mensaje, id });
         }
 
+        // Marcar vacuna como Pendiente / Completada (igual que un tratamiento)
+        [Authorize(Roles = "Administrador,Veterinario")]
+        [HttpPut("{id}/estado")]
+        public async Task<IActionResult> ActualizarEstadoVacuna(
+            int id, [FromBody] ActualizarEstadoVacunaDto dto)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(new { mensaje = "No se pudo identificar al usuario." });
+
+            var (ok, mensaje) = await _vacunaService.ActualizarEstadoVacuna(id, dto.Estado, userId);
+            if (!ok) return BadRequest(new { mensaje });
+            return Ok(new { mensaje });
+        }
+
+        // Alertas: vacunas cuya próxima dosis es hoy o ya venció y siguen pendientes
+        [Authorize]
+        [HttpGet("alertas")]
+        public async Task<IActionResult> GetAlertasVacunas()
+        {
+            var (ok, mensaje, data) = await _vacunaService.GetAlertasVacunas();
+            if (!ok) return StatusCode(500, new { mensaje });
+            return Ok(data);
+        }
+
         [Authorize]
         [HttpGet("todas")]
         public async Task<IActionResult> GetTodasLasVacunas([FromServices] Api_Eden.Data.AppDbContext db)
@@ -73,6 +98,7 @@ namespace Api_Eden.Controllers
                         v.Lote,
                         Veterinario = v.Veterinario.Nombre + " " + v.Veterinario.Apellido,
                         v.Observaciones,
+                        Estado = v.Estado ?? "Pendiente",
                         Vencida = v.ProximaDosis.HasValue &&
                                         v.ProximaDosis < DateOnly.FromDateTime(DateTime.Today),
                     })

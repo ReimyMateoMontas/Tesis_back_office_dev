@@ -53,6 +53,10 @@
         string? Observaciones
     );
 
+    public record ActualizarEstadoVacunaDto(
+        string Estado
+    );
+
     // ── Fallecimiento ─────────────────────────────────────────────────
     public record RegistrarFallecimientoDto(
         int AnimalId,

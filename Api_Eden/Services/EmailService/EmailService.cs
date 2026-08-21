@@ -230,6 +230,104 @@ namespace Api_Eden.Services.EmailService
             }
         }
 
+        public async Task<bool> EnviarAlertaVacunaAsync(
+            string destinatario, string nombre, IReadOnlyList<AlertaVacunaItem> vacunas)
+        {
+            if (vacunas is null || vacunas.Count == 0)
+                return true; // nada que notificar
+
+            var apiKey = GetSendGridApiKey();
+            var appName = _config["SendGrid:AppName"] ?? "Fundación El Edén";
+
+            // ── Modo desarrollo: sin API key → solo loguear ───────────────────
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                _logger.LogWarning(
+                    "⚠ SendGrid no configurado. Alerta de {Count} vacuna(s) para {Email}.",
+                    vacunas.Count, destinatario);
+                Console.WriteLine($"\n========================================");
+                Console.WriteLine($"ALERTA DE VACUNAS (modo desarrollo)");
+                Console.WriteLine($"Para: {destinatario}");
+                foreach (var v in vacunas)
+                    Console.WriteLine($"  - {v.Animal} · {v.TipoVacuna} · {v.ProximaDosis} {(v.Vencida ? "(VENCIDA)" : "(hoy)")}");
+                Console.WriteLine($"========================================\n");
+                return !IsProduction();
+            }
+
+            // ── Producción: envío real con SendGrid ───────────────────────────
+            try
+            {
+                var remite = _config["SendGrid:From"] ?? "noreply@fundacioneden.com";
+
+                var filas = string.Join("", vacunas.Select(v => $@"
+      <tr>
+        <td style='padding:10px 12px; border-bottom:1px solid #f3f4f6; font-size:14px; color:#111827;'>{v.Animal}</td>
+        <td style='padding:10px 12px; border-bottom:1px solid #f3f4f6; font-size:14px; color:#6b7280;'>{v.TipoVacuna}</td>
+        <td style='padding:10px 12px; border-bottom:1px solid #f3f4f6; font-size:14px; color:#6b7280;'>{v.ProximaDosis}</td>
+        <td style='padding:10px 12px; border-bottom:1px solid #f3f4f6; font-size:13px; font-weight:600; color:{(v.Vencida ? "#dc2626" : "#d97706")};'>{(v.Vencida ? "Vencida" : "Hoy")}</td>
+      </tr>"));
+
+                var client = new SendGridClient(apiKey);
+                var from = new EmailAddress(remite, appName);
+                var to = new EmailAddress(destinatario, nombre);
+                var subject = $"🐾 {vacunas.Count} vacuna(s) por aplicar — {appName}";
+
+                var html = $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset='utf-8'></head>
+<body style='font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif; background:#f9fafb; margin:0; padding:0;'>
+  <div style='max-width:560px; margin:40px auto; background:#fff; border-radius:16px; border:1px solid #e5e7eb; overflow:hidden;'>
+    <div style='background:#16a34a; padding:28px 40px; text-align:center;'>
+      <h1 style='color:#fff; margin:0; font-size:20px; font-weight:700;'>🐾 {appName}</h1>
+      <p style='color:#bbf7d0; margin:6px 0 0; font-size:14px;'>Recordatorio de vacunación</p>
+    </div>
+    <div style='padding:32px 40px;'>
+      <h2 style='color:#111827; font-size:17px; margin:0 0 12px;'>Hola, {nombre}</h2>
+      <p style='color:#6b7280; font-size:14px; line-height:1.6; margin:0 0 20px;'>
+        Las siguientes vacunas tienen su próxima dosis para <strong>hoy</strong> o ya están <strong>vencidas</strong>:
+      </p>
+      <table style='width:100%; border-collapse:collapse; border:1px solid #f3f4f6; border-radius:8px; overflow:hidden;'>
+        <thead>
+          <tr style='background:#f9fafb;'>
+            <th style='padding:10px 12px; text-align:left; font-size:12px; text-transform:uppercase; color:#9ca3af;'>Animal</th>
+            <th style='padding:10px 12px; text-align:left; font-size:12px; text-transform:uppercase; color:#9ca3af;'>Vacuna</th>
+            <th style='padding:10px 12px; text-align:left; font-size:12px; text-transform:uppercase; color:#9ca3af;'>Próxima dosis</th>
+            <th style='padding:10px 12px; text-align:left; font-size:12px; text-transform:uppercase; color:#9ca3af;'>Estado</th>
+          </tr>
+        </thead>
+        <tbody>{filas}
+        </tbody>
+      </table>
+      <p style='color:#9ca3af; font-size:12px; margin:20px 0 0;'>
+        Ingresa al módulo Médico para registrar la dosis y marcar la vacuna como finalizada.
+      </p>
+    </div>
+    <div style='background:#f9fafb; padding:18px 40px; text-align:center; border-top:1px solid #f3f4f6;'>
+      <p style='color:#9ca3af; font-size:12px; margin:0;'>{appName} · Sistema de Gestión de Animales</p>
+    </div>
+  </div>
+</body>
+</html>";
+
+                var msg = MailHelper.CreateSingleEmail(from, to, subject, "", html);
+                var response = await client.SendEmailAsync(msg);
+                var enviado = (int)response.StatusCode >= 200 && (int)response.StatusCode < 300;
+
+                if (enviado)
+                    _logger.LogInformation("SendGrid alerta vacunas enviada a {Email}. StatusCode: {StatusCode}", destinatario, response.StatusCode);
+                else
+                    _logger.LogError("SendGrid alerta vacunas falló para {Email}. StatusCode: {StatusCode}", destinatario, response.StatusCode);
+
+                return enviado;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al enviar alerta de vacunas a {Email}", destinatario);
+                return false;
+            }
+        }
+
         private string? GetSendGridApiKey()
         {
             var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY")
